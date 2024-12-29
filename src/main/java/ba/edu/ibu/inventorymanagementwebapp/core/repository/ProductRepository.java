@@ -13,4 +13,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByQuantityLessThan(int threshold);
 
     List<Product> findByNameContainingIgnoreCase(String name);
+
+    List<Product> findByUserId(Long userId);
+
+
 }

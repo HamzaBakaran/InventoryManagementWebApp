@@ -8,3 +8,9 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
+
+mailgun:
+  domain: ${MAILGUN_DOMAIN}
+  from-email: ${MAILGUN_FROM_EMAIL}
+  username: ${MAILGUN_USERNAME}
+  password: ${MAILGUN_PASSWORD}
