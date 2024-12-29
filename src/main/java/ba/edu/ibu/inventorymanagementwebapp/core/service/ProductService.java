@@ -5,6 +5,7 @@ import ba.edu.ibu.inventorymanagementwebapp.core.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 
 @Service
@@ -70,4 +71,9 @@ public class ProductService {
 
         return productRepository.save(existingProduct);
     }
+
+    public List<Map<String, Object>> getProductsWithCategoryNamesByUserId(Long userId) {
+        return productRepository.findProductsWithCategoryNamesByUserId(userId);
+    }
+
 }
