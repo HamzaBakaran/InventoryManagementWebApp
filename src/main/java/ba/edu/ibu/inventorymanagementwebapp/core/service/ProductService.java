@@ -1,22 +1,25 @@
 package ba.edu.ibu.inventorymanagementwebapp.core.service;
 
 import ba.edu.ibu.inventorymanagementwebapp.core.model.Product;
+import ba.edu.ibu.inventorymanagementwebapp.core.model.ProductQuantityChange;
+import ba.edu.ibu.inventorymanagementwebapp.core.repository.ProductQuantityChangeRepository;
 import ba.edu.ibu.inventorymanagementwebapp.core.repository.ProductRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
 
-
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-
 
 @Service
 public class ProductService {
     private final ProductRepository productRepository;
+    private final ProductQuantityChangeRepository productQuantityChangeRepository;
 
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(ProductRepository productRepository, ProductQuantityChangeRepository productQuantityChangeRepository) {
         this.productRepository = productRepository;
+        this.productQuantityChangeRepository = productQuantityChangeRepository;
     }
 
     public Product createProduct(Product product) {
@@ -56,19 +59,25 @@ public class ProductService {
         return productRepository.findAll();
     }
 
-    // Method to update quantity with validation and warnings
-    public Product updateProductQuantity(Long id, int quantity) {
-        if (quantity < 0) {
+    // Update quantity and log changes
+    public Product updateProductQuantity(Long id, int newQuantity) {
+        if (newQuantity < 0) {
             throw new IllegalArgumentException("Quantity cannot be less than 0.");
         }
 
         Product existingProduct = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        existingProduct.setQuantity(quantity);
+        int changeAmount = newQuantity - existingProduct.getQuantity();
 
-        // Check if the quantity is less than or equal to the minimal threshold
-        if (quantity <= existingProduct.getMinimalThreshold()) {
+        if (changeAmount != 0) {
+            ProductQuantityChange changeLog = new ProductQuantityChange(existingProduct, changeAmount, LocalDateTime.now());
+            productQuantityChangeRepository.save(changeLog);
+        }
+
+        existingProduct.setQuantity(newQuantity);
+
+        if (newQuantity <= existingProduct.getMinimalThreshold()) {
             System.out.println("Warning: Product quantity is less than or equal to the minimal threshold.");
         }
 
@@ -98,6 +107,7 @@ public class ProductService {
         Sort sort = Sort.by(Sort.Direction.fromString(order), sortBy);
         return productRepository.findAll(spec, sort);
     }
+
     public List<Product> getFilteredAndSortedProductsByUserId(
             Long userId, String name, String description, Integer quantity, Long categoryId, String sortBy, String order) {
 
@@ -120,4 +130,8 @@ public class ProductService {
         return productRepository.findAll(spec, sort);
     }
 
+    // Generate sales report for a category
+    public List<ProductQuantityChange> getSalesReport(Long categoryId, LocalDateTime start, LocalDateTime end) {
+        return productQuantityChangeRepository.findByCategoryAndDateRange(categoryId, start, end);
+    }
 }
